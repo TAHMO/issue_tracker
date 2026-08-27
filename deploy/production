@@ -1,0 +1,2 @@
+[webservers]
+tickets.tahmo.org nginx_use_letsencrypt=true
