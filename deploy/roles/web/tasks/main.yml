@@ -1,0 +1,10 @@
+---
+
+- ansible.builtin.import_tasks: setup_git_repo.yml
+  tags: deploy
+
+- ansible.builtin.import_tasks: setup_node_server.yml
+  tags: deploy
+
+- ansible.builtin.import_tasks: setup_supervisor.yml
+  tags: supervisor

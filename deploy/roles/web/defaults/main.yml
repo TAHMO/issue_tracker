@@ -1,0 +1,10 @@
+---
+# Virtualenv settings.
+enable_deadsnakes_ppa: false
+recreate_virtualenv: false
+# virtualenv_python_version: '{{ base_python_package }}'
+
+# Application settings.
+project_path: '/webapps/{{ application_name }}'
+application_log_dir: '{{ project_path }}/logs'
+application_log_file: "{{ application_log_dir }}/server_logs.log"

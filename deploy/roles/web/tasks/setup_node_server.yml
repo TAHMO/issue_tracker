@@ -1,0 +1,6 @@
+---
+
+- name: Install npm packages
+  command:
+    cmd: "npm install"
+    chdir: "{{ project_path }}"
