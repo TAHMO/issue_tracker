@@ -129,6 +129,18 @@
 							</md-option>
 						</md-select>
 					</md-input-container>
+					  <!-- SUBSCRIBERS -->
+					   <md-input-container class="md-block">
+						<label>Subscribers</label>
+						<md-select ng-model="issue.subscribers"
+						multiple
+						md-on-open="loadAllUsers()"
+						style="min-width: 200px;">
+						<md-option ng-repeat="u in allUsers | orderBy:'full_name'" ng-value="u._id">
+							{{u.full_name}} ({{u.email}})
+						</md-option>
+						</md-select>		
+					   </md-input-container>
 					<md-input-container>
 						<label>Label</label>
 						<md-select style="min-width: 200px;" ng-model="issue.labels" md-on-open="loadLabels()" ng-change="updateLabels(issue.labels)" flex-gt-sm multiple>
