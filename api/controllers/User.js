@@ -191,4 +191,125 @@ module.exports = function(router) {
 			}
 		});
 	});
+
+//=====================
+// (ARCHIVE / DELETE)
+//=====================
+router.post('/api/users/:id/action', function(req, res) {
+    const { id } = req.params;
+    const { action } = req.body; // 'archive' | 'delete'
+
+    if (!action) {
+        return res.status(200).send({
+            success: false,
+            message: 'Action is required.'
+        });
+    }
+
+    switch (action) {
+        case 'archive':
+            return archiveUser(id, res);
+
+        case 'delete':
+            return deleteUser(id, res);
+
+        default:
+            return res.status(200).send({
+                success: false,
+                message: 'Invalid action.'
+            });
+    }
+});
+
+
+	//=====================
+// DELETE USER BY ID
+//=====================
+router.delete('/api/users/:id', function(req, res) {
+    const { id } = req.params;
+
+    User.findByIdAndDelete(id, function(err, user) {
+        if (err) {
+            return res.status(200).send({
+                success: false,
+                message: 'Error deleting user.'
+            });
+        }
+
+        if (!user) {
+            return res.status(200).send({
+                success: false,
+                message: 'User not found.'
+            });
+        }
+
+        return res.status(200).send({
+            success: true,
+            message: 'User deleted successfully.',
+            data: user
+        });
+    });
+});
+
+}
+
+//=====================
+// HELPER FUNCTIONS
+//=====================
+function archiveUser(id, res) {
+    User.findOneAndUpdate(
+        { _id: id },
+        {
+            isArchived: true,
+            archivedAt: new Date(),
+            updated_at: new Date()
+        },
+        { new: true },
+        function(err, user) {
+            if (err || !user) {
+                return res.status(200).send({
+                    success: false,
+                    message: 'Error archiving user.'
+                });
+            }
+
+            return res.status(200).send({
+                success: true,
+                message: 'User archived successfully.',
+                data: user
+            });
+        }
+    );
+}
+
+function deleteUser(id, res) {
+    User.findById(id, function(err, user) {
+        if (err || !user) {
+            return res.status(200).send({
+                success: false,
+                message: 'User not found.'
+            });
+        }
+
+        if (!user.isArchived) {
+            return res.status(200).send({
+                success: false,
+                message: 'Archive user before deleting.'
+            });
+        }
+
+        User.findByIdAndDelete(id, function(err) {
+            if (err) {
+                return res.status(200).send({
+                    success: false,
+                    message: 'Error deleting user.'
+                });
+            }
+
+            return res.status(200).send({
+                success: true,
+                message: 'User permanently deleted.'
+            });
+        });
+    });
 }

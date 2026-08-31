@@ -86,7 +86,7 @@ App.config(['$stateProvider', '$urlRouterProvider',
 																'assets/js/plugins/leaflet-markercluster/dist/MarkerCluster.css',
 																'assets/js/plugins/leaflet-markercluster/dist/MarkerCluster.Default.css',
                                 'assets/js/plugins/slick/slick.min.js',
-                                'assets/js/plugins/chartjs/Chart.min.js',
+                                // 'assets/js/plugins/chartjs/Chart.min.js',
 																'assets/js/plugins/bootstrap-select/dist/js/bootstrap-select.min.js',
                                 'assets/js/plugins/leaflet/leaflet.js',
                                 'assets/js/plugins/leaflet-awesome-markers/leaflet.awesome-markers.min.js',
@@ -786,6 +786,7 @@ App.factory('UserService', ['$http', function($http) {
 	service.CreateUser = CreateUser;
 	//PUT
 	service.UpdateUser = UpdateUser;
+    service.DeleteUserById= DeleteUserById;
 	return service;
 
 	function GetManagers() {
@@ -838,6 +839,10 @@ App.factory('UserService', ['$http', function($http) {
 	function UpdateUser(user) {
 		return $http.put('api/users/'+user._id, user);
 	}
+
+    function DeleteUserById(id){
+        return $http.delete('api/users'+ id);
+    }
 }]);
 
 App.factory('IssueService', ['$http', function($http) {
@@ -854,6 +859,9 @@ App.factory('IssueService', ['$http', function($http) {
 	//POST
   service.Subscribe = Subscribe;
   service.Unsubscribe = Unsubscribe;
+  service.Mute = Mute;
+service.Unmute = Unmute;
+service.GetMuteStates = GetMuteStates;
 	service.CreateIssue = CreateIssue;
 	service.PostIssueComment = PostIssueComment;
 	//PUT
@@ -913,6 +921,18 @@ App.factory('IssueService', ['$http', function($http) {
     return $http.post('api/issues/'+issueId+'/unsubscribe', {user_id});
   }
 
+  function Mute(issueId, user_id) {
+    return $http.post('api/issues/' + issueId + '/mute', { user_id });
+  }
+  
+  function Unmute(issueId, user_id) {
+    return $http.post('api/issues/' + issueId + '/unmute', { user_id });
+  }
+  
+  function GetMuteStates(userId) {
+    return $http.get('api/issues/mute?user_id=' + userId);
+  }
+
 	function CreateIssue(issue) {
 		return $http.post('api/issues', issue);
 	}
@@ -942,9 +962,16 @@ App.factory('SiteService', ['$http', function($http) {
   service.GetSiteCountries = GetSiteCountries;
 	return service;
 
-	function GetSites(provider="tahmo", format="") {
-		return $http.get('api/sites?provider='+provider+'&format='+format);
-	}
+	// function GetSites(provider="tahmo", format="") {
+	// 	return $http.get('api/sites?provider='+provider+'&format='+format);
+	// }
+    function GetSites(format = "") {
+        if (format) {
+            return $http.get('api/sites?format=' + format);
+        } else {
+            return $http.get('api/sites');
+        }
+    }
 	function GetSiteByCode(sitecode) {
 		return $http.get('api/sites/'+sitecode);
 	}

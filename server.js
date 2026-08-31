@@ -1,4 +1,6 @@
 // set up ======================================================================
+require('dotenv').config();
+require('./api/models/connections'); //Fixed: initializes DB connections
 var express  = require('express');
 var app = express();                        	// create our app w/express
 var router = express.Router();								// use express router for our routes

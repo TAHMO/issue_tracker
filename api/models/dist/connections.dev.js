@@ -1,5 +1,7 @@
+require('dotenv').config();
+console.log("DB_1:", process.env.DB_1);
+console.log("DB_2:", process.env.DB_2);
 "use strict";
-
 var variables = JSON.parse(process.env.VCAP_SERVICES || '{}');
 var db_1 = process.env.DB_1;
 var db_2 = process.env.DB_2;
