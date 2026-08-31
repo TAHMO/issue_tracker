@@ -108,6 +108,16 @@ App.controller('IssueCtrl', [
   
 
     const userId = $rootScope.globals.currentUser.user._id;
+    $scope.mutedIssues = {};
+    // Load all muted issues for this user when the page loads
+IssueService.GetMuteStates(userId).then(function(res) {
+  if (res.data.success) {
+    res.data.data.forEach(function(entry) {
+      $scope.mutedIssues[entry.issue_id] = entry.muted;
+    });
+  }
+});
+
 
     //default tab that is opened is "OPEN", so define as 0
     $scope.selectedIndex = 0;
@@ -142,6 +152,31 @@ App.controller('IssueCtrl', [
     } : null;
 
     $scope.subscribedIssues = [];
+    $scope.isMuted = function(issueId) {
+      return !!$scope.mutedIssues[issueId];
+    };
+    
+    $scope.toggleMute = function(issueId) {
+      const userId = $rootScope.globals.currentUser.user._id;
+    
+      if ($scope.isMuted(issueId)) {
+        // UNMUTE
+        IssueService.Unmute(issueId, userId).then(function(res) {
+          if (res.data.success) {
+            $scope.mutedIssues[issueId] = false;
+            Toast.Success("Unmuted");
+          }
+        });
+      } else {
+        // MUTE
+        IssueService.Mute(issueId, userId).then(function(res) {
+          if (res.data.success) {
+            $scope.mutedIssues[issueId] = true;
+            Toast.Success("Muted");
+          }
+        });
+      }
+    };
     $scope.isSubscribedTo = function(item, list) {
       return list.indexOf(item) > -1;
     };
@@ -159,6 +194,7 @@ App.controller('IssueCtrl', [
         });
       } else {
         IssueService.Subscribe(item, userId).then(function(response) {
+       
           const issues = response.data;
           if (issues.success) {
             list.push(item);
@@ -370,6 +406,9 @@ App.controller('ViewIssueCtrl', [
         full_name: fullName
       },
     };
+   
+    //  $scope.subscribers = [];        // [{ _id, full_name, email }, ...] used in the UI
+    //  $scope.subscriberEmails = [];   // ['a@x.com', ...] used for sending/checks
     $scope.subscribers = [];
     bulkEmail = function(receivers) {
       const link = "https://tahmoissuetracker.mybluemix.net/#/issues/view/" + $scope.issue.ids;
@@ -391,17 +430,40 @@ App.controller('ViewIssueCtrl', [
         });
       });
     };
+    
+    // IssueService.GetSubscriptionsByIssue(_id).then(function(response) {
+    //   const issue = response.data;
+    //   if (issue.success) {
+    //     issue.data.map(function (subscriber) {
+    //       if(userId !== subscriber._id) $scope.subscribers.push(subscriber.email);
+    //     });
+    //   } else {
+    //     Toast.Danger(issue.message);
+    //   }
+    // });
+    
+     //  // Subscribers for display (objects) and emails for notifications
+    $scope.subscribers = [];        // for display (full_name + email)
+$scope.subscriberEmails = [];   // for email sending only
 
-    IssueService.GetSubscriptionsByIssue(_id).then(function(response) {
-      const issue = response.data;
-      if (issue.success) {
-        issue.data.map(function (subscriber) {
-          if(userId !== subscriber._id) $scope.subscribers.push(subscriber.email);
-        });
-      } else {
-        Toast.Danger(issue.message);
+IssueService.GetSubscriptionsByIssue(_id).then(function(response) {
+  const issue = response.data;
+  if (issue.success) {
+    issue.data.forEach(function(u) {
+      // u = { _id, full_name, email }
+
+      // Show full user details in UI
+      $scope.subscribers.push(u);
+
+      // Add to email list EXCEPT the current user
+      if (userId !== u._id) {
+        $scope.subscriberEmails.push(u.email);
       }
     });
+  } else {
+    Toast.Danger(issue.message);
+  }
+});
 
     IssueService.GetIssueById(_id).then(function(response) {
       const issue = response.data;
@@ -723,6 +785,169 @@ App.controller('NewIssueCtrl', [
   },
 ]);
 
+// App.controller('EditIssueCtrl', [
+//   '$scope',
+//   '$http',
+//   '$window',
+//   '$location',
+//   '$state',
+//   '$stateParams',
+//   '$log',
+//   '$q',
+//   'IssueService',
+//   'UserService',
+//   'SiteService',
+//   'Toast',
+//   function(
+//     $scope,
+//     $http,
+//     $window,
+//     $location,
+//     $state,
+//     $stateParams,
+//     $log,
+//     $q,
+//     IssueService,
+//     UserService,
+//     SiteService,
+//     Toast,
+//   ) {
+//     const _id = $stateParams.id;
+//     $scope.id = _id;
+//     $scope.item = {
+//       Country: null,
+//       SiteID: null,
+//       DeviceId: null,
+//       SiteCode: null,
+//       SiteName: null,
+//       Latitude: null,
+//       Longitude: null,
+//       Elevation_m: null,
+//       value: 'altu',
+//     };
+//     IssueService.GetIssueById(_id).then(function(response) {
+//       const issue = response.data;
+//       if (issue.success) {
+//         $scope.issue = issue.data;
+//         $scope.issue.due_date = new Date($scope.issue.due_date);
+//         $scope.issue.ids = [_id];
+//         $scope.item.SiteCode = $scope.issue.station;
+//         $scope.item.DeviceId = $scope.issue.deviceId;
+//         selectedItemChange($scope.item);
+//       } else {
+//         Toast.Danger(issue.message);
+//       }
+//     });
+//     $scope.updateLabels = function(label) {
+//       $scope.issue.labels = label;
+//     };
+//     UserService.GetUsers(['full_name']).then(function(response) {
+//       const assignees = response.data;
+//       if (assignees.success) {
+//         $scope.assignees = assignees.data;
+//       }
+//     });
+//     IssueService.GetLabels().then(function(response) {
+//       const labels = response.data;
+//       if (labels.success) {
+//         $scope.labels = labels.data;
+//       }
+//     });
+//     IssueService.GetPriorities().then(function(response) {
+//       const priorities = response.data;
+//       if (priorities.success) {
+//         $scope.priorities = priorities.data;
+//       }
+//     });
+//     // Load all users for subscriber selection
+// $scope.loadUsers = function () {
+//   UserService.GetUsers(['full_name', 'email']).then(function (response) {
+//     const users = response.data;
+//     if (users.success) {
+//       $scope.allUsers = users.data;
+//     }
+//   });
+// };
+
+
+//     $scope.querySearch = querySearch;
+//     $scope.selectedItemChange = selectedItemChange;
+//     $scope.searchTextChange = searchTextChange;
+
+//     function querySearch(query) {
+//       let results = [];
+//       if ($scope.sites && $scope.sites.length > 0) {
+//         results = query
+//           ? $scope.sites.filter(createFilterFor(query))
+//           : $scope.sites;
+//       }
+//       return results;
+//     }
+//     function createFilterFor(query) {
+//       const lowercaseQuery = angular.lowercase(query);
+//       return function filterFn(item) {
+//         return (
+//           (item.sitecode && item.sitecode.indexOf(lowercaseQuery) === 0) ||
+//           (item.deviceid && item.deviceid.indexOf(lowercaseQuery) === 0) ||
+//           (item.sitename && item.sitename.indexOf(lowercaseQuery) === 0)
+//         );
+//       };
+//     }
+
+//     function selectedItemChange(item) {
+//       if (item !== undefined) {
+//         $scope.issue.station = item.SiteCode;
+//         $scope.issue.deviceId = item.DeviceId;
+//         $scope.issue.siteName = item.SiteName;
+//       }
+//     }
+
+//     function searchTextChange(text) {
+//       $scope.issue.station = text;
+//     }
+
+//     SiteService.GetSites().then(function(response) {
+//       const sites = response.data;
+//       $scope.sites = [];
+//       if (sites.success) {
+//         $scope.sites = sites.data;
+//         if ($scope.sites && $scope.sites.length > 0) {
+//           $scope.sites.map(function(site) {
+//             site.sitecode = site.SiteCode ? site.SiteCode.toLowerCase() : null;
+//             site.deviceid = site.DeviceId ? site.DeviceId.toLowerCase() : null;
+//             site.sitename = site.SiteName ? site.SiteName.toLowerCase() : null;
+//           });
+//         }
+//       } else {
+//         Toast.Danger(sites.message);
+//       }
+//     });
+
+//     $scope.updateIssue = function(issue) {
+//       IssueService.UpdateIssues(issue).then(function(response) {
+//         const issue = response.data;
+//         if (issue.success) {
+//           Toast.Success(issue.message);
+//           $state.go('viewissues', {id: _id});
+//         } else {
+//           Toast.Danger(issue.message);
+//         }
+//       });
+//     };
+//     $scope.deleteIssue = function(issue) {
+//       IssueService.DeleteIssueById(issue._id).then(function(response) {
+//         const deleting = response.data;
+//         if (deleting.success) {
+//           Toast.Success(deleting.message);
+//           $state.go('issues');
+//         } else {
+//           Toast.Danger(deleting.message);
+//         }
+//       });
+//     };
+//   },
+// ]);
+
 App.controller('EditIssueCtrl', [
   '$scope',
   '$http',
@@ -752,6 +977,7 @@ App.controller('EditIssueCtrl', [
   ) {
     const _id = $stateParams.id;
     $scope.id = _id;
+
     $scope.item = {
       Country: null,
       SiteID: null,
@@ -763,40 +989,104 @@ App.controller('EditIssueCtrl', [
       Elevation_m: null,
       value: 'altu',
     };
+
+    // initialize models
+    $scope.issue = {};
+    $scope.assignees = [];
+    $scope.labels = [];
+    $scope.priorities = [];
+    $scope.sites = [];
+    $scope.allUsers = [];
+
+    // Load issue + existing subscribers
     IssueService.GetIssueById(_id).then(function(response) {
-      const issue = response.data;
-      if (issue.success) {
-        $scope.issue = issue.data;
-        $scope.issue.due_date = new Date($scope.issue.due_date);
+      const res = response.data;
+      if (res.success) {
+        $scope.issue = res.data;
+        // normalize
+        $scope.issue.due_date = $scope.issue.due_date ? new Date($scope.issue.due_date) : null;
         $scope.issue.ids = [_id];
         $scope.item.SiteCode = $scope.issue.station;
         $scope.item.DeviceId = $scope.issue.deviceId;
         selectedItemChange($scope.item);
+
+        // Load existing subscribers for the issue (returns user objects)
+        IssueService.GetSubscriptionsByIssue(_id).then(function(subResp) {
+          if (subResp.data && subResp.data.success) {
+            // subResp.data.data is expected to be array of users { _id, email, full_name }
+            $scope.issue.subscribers = subResp.data.data.map(u => u._id);
+            // keep original snapshot for diffing when saving
+            $scope.issue.subscribers_original = angular.copy($scope.issue.subscribers);
+          } else {
+            // if no subscribers, ensure arrays exist
+            $scope.issue.subscribers = $scope.issue.subscribers || [];
+            $scope.issue.subscribers_original = angular.copy($scope.issue.subscribers);
+          }
+        }, function() {
+          $scope.issue.subscribers = $scope.issue.subscribers || [];
+          $scope.issue.subscribers_original = angular.copy($scope.issue.subscribers);
+        });
+
       } else {
-        Toast.Danger(issue.message);
+        Toast.Danger(res.message || 'Could not load issue.');
       }
+    }, function() {
+      Toast.Danger('Could not load issue.');
     });
-    $scope.updateLabels = function(label) {
-      $scope.issue.labels = label;
-    };
+
+    // Load selectable data
     UserService.GetUsers(['full_name']).then(function(response) {
       const assignees = response.data;
       if (assignees.success) {
         $scope.assignees = assignees.data;
       }
     });
+
     IssueService.GetLabels().then(function(response) {
       const labels = response.data;
       if (labels.success) {
         $scope.labels = labels.data;
       }
     });
+
     IssueService.GetPriorities().then(function(response) {
       const priorities = response.data;
       if (priorities.success) {
         $scope.priorities = priorities.data;
       }
     });
+
+    SiteService.GetSites().then(function(response) {
+      const sites = response.data;
+      if (sites.success) {
+        $scope.sites = sites.data;
+        // prepare search fields (lowercased) for autocomplete
+        $scope.sites.forEach(function(site) {
+          site.sitecode = site.SiteCode ? site.SiteCode.toLowerCase() : '';
+          site.deviceid = site.DeviceId ? site.DeviceId.toLowerCase() : '';
+          site.sitename = site.SiteName ? site.SiteName.toLowerCase() : '';
+        });
+      } else {
+        Toast.Danger(sites.message);
+      }
+    });
+
+    // Called when md-select (subscribers) opens
+    $scope.loadAllUsers = function() {
+      // fetch minimal fields: full_name and email
+      UserService.GetUsers(['full_name', 'email']).then(function(response) {
+        const resp = response.data;
+        if (resp && resp.success) {
+          $scope.allUsers = resp.data;
+        } else {
+          $scope.allUsers = $scope.allUsers || [];
+        }
+      }, function() {
+        $scope.allUsers = $scope.allUsers || [];
+      });
+    };
+
+    // Autocomplete functions (existing)
     $scope.querySearch = querySearch;
     $scope.selectedItemChange = selectedItemChange;
     $scope.searchTextChange = searchTextChange;
@@ -804,12 +1094,11 @@ App.controller('EditIssueCtrl', [
     function querySearch(query) {
       let results = [];
       if ($scope.sites && $scope.sites.length > 0) {
-        results = query
-          ? $scope.sites.filter(createFilterFor(query))
-          : $scope.sites;
+        results = query ? $scope.sites.filter(createFilterFor(query)) : $scope.sites;
       }
       return results;
     }
+
     function createFilterFor(query) {
       const lowercaseQuery = angular.lowercase(query);
       return function filterFn(item) {
@@ -822,7 +1111,7 @@ App.controller('EditIssueCtrl', [
     }
 
     function selectedItemChange(item) {
-      if (item !== undefined) {
+      if (item !== undefined && item !== null) {
         $scope.issue.station = item.SiteCode;
         $scope.issue.deviceId = item.DeviceId;
         $scope.issue.siteName = item.SiteName;
@@ -833,34 +1122,44 @@ App.controller('EditIssueCtrl', [
       $scope.issue.station = text;
     }
 
-    SiteService.GetSites().then(function(response) {
-      const sites = response.data;
-      $scope.sites = [];
-      if (sites.success) {
-        $scope.sites = sites.data;
-        if ($scope.sites && $scope.sites.length > 0) {
-          $scope.sites.map(function(site) {
-            site.sitecode = site.SiteCode ? site.SiteCode.toLowerCase() : null;
-            site.deviceid = site.DeviceId ? site.DeviceId.toLowerCase() : null;
-            site.sitename = site.SiteName ? site.SiteName.toLowerCase() : null;
-          });
-        }
-      } else {
-        Toast.Danger(sites.message);
-      }
-    });
-
+    // Save changes: update issue fields and sync subscriptions
     $scope.updateIssue = function(issue) {
-      IssueService.UpdateIssues(issue).then(function(response) {
-        const issue = response.data;
-        if (issue.success) {
-          Toast.Success(issue.message);
-          $state.go('viewissues', {id: _id});
-        } else {
-          Toast.Danger(issue.message);
+      // ensure arrays
+      const oldSubs = issue.subscribers_original || [];
+      const newSubs = issue.subscribers || [];
+
+      // compute diffs (arrays of user ids)
+      const added = newSubs.filter(u => oldSubs.indexOf(u) === -1);
+      const removed = oldSubs.filter(u => newSubs.indexOf(u) === -1);
+
+      // Prepare payload for UpdateIssues API (your existing endpoint expects object; keep same shape)
+      // If your UpdateIssues expects { ids: [...], ...fields }, keep the same. We'll send the issue object.
+      IssueService.UpdateIssues(issue).then(function(res) {
+        if (!res.data || !res.data.success) {
+          Toast.Danger((res.data && res.data.message) || 'Could not update issue.');
+          return;
         }
+
+        // Fire-and-forget subscription calls (no blocking)
+        added.forEach(function(uid) {
+          IssueService.Subscribe(issue._id, uid).then(function(subRes) {
+            // optional: check subRes.data.success
+          });
+        });
+        removed.forEach(function(uid) {
+          IssueService.Unsubscribe(issue._id, uid).then(function(unsubRes) {
+            // optional: check unsubRes.data.success
+          });
+        });
+
+        Toast.Success('Issue updated successfully.');
+        $state.go('viewissues', { id: issue._id });
+      }, function() {
+        Toast.Danger('Error updating issue.');
       });
     };
+
+    // Delete issue (existing)
     $scope.deleteIssue = function(issue) {
       IssueService.DeleteIssueById(issue._id).then(function(response) {
         const deleting = response.data;
@@ -886,6 +1185,9 @@ App.controller('DashboardCtrl', [
   '$stateParams',
   'ModalService',
   'SiteService',
+  'AnalyticsService',
+  'Toast',
+  '$timeout',
   function(
     $scope,
     $rootScope,
@@ -897,6 +1199,9 @@ App.controller('DashboardCtrl', [
     $stateParams,
     ModalService,
     SiteService,
+    AnalyticsService,
+    Toast,
+    $timeout
   ) {
     $scope.user = $rootScope.globals.currentUser.user;
     var from = $stateParams.from;
@@ -925,7 +1230,7 @@ App.controller('DashboardCtrl', [
           return '#d43e2a';
       }
     };
-    SiteService.GetSites('tahmo', 'geojson').then(function(response) {
+    SiteService.GetSites( 'geojson').then(function(response) { // took 'tahmo',out to make the sites work locally
       const sites = response.data;
       if (sites.success) {
         angular.extend($scope, {
@@ -985,6 +1290,193 @@ App.controller('DashboardCtrl', [
     $scope.focus = function(geometry) {
       $scope.$broadcast('center-single', geometry);
     };
+
+// =======================
+// DASHBOARD ANALYTICS
+// =======================
+AnalyticsService.getOverview().then(function(res) {
+  if (!res.data.success) return;
+
+  const data = res.data.data;
+
+  // Best-performing country by station uptime
+  $scope.bestCountry = data.bestPerformingCountry || {
+    country: 'N/A',
+    avgUptime: 0
+  };
+
+  $timeout(function () {
+
+    // ----- Open Tickets -----
+    const openCanvas = document.getElementById('openTicketsChart');
+    if (openCanvas) {
+      new Chart(openCanvas, {
+  type: 'bar',
+  data: {
+    labels: ['Open Tickets'],
+    datasets: [{
+      label: 'Open Tickets',
+      data: [Number(data.openTickets || 0)],
+      backgroundColor: '#d43e2a',
+      borderRadius: 6,
+      barThickness: 50
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },   // removes "undefined"
+      tooltip: { enabled: true }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0,             // no decimals
+          stepSize: 1
+        }
+      },
+      x: {
+        ticks: { autoSkip: false }
+      }
+    }
+  }
+});
+      
+    }
+
+    // ----- Avg Unresolved Duration -----
+    const unresolvedCanvas = document.getElementById('unresolvedChart');
+    if (unresolvedCanvas) {
+      new Chart(unresolvedCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['Avg Unresolved (days)'],
+          datasets: [{
+            label: 'Days',
+            data: [Number(data.avgUnresolvedDays.toFixed(1))],
+            backgroundColor: '#f0932f',
+            borderRadius: 6,
+            barThickness: 40
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      
+    }
+
+    // ----- Hardware vs Battery ----
+const batteryCanvas = document.getElementById('batteryPieChart');
+if (batteryCanvas && data.batteryPie) {
+  new Chart(batteryCanvas, {
+    type: 'pie',
+    data: {
+      labels: data.batteryPie.map(x => x.label),
+      datasets: [{
+        data: data.batteryPie.map(x => x.count),
+        backgroundColor: ['#71ae26', '#d43e2a']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' }
+      }
+    }
+  });
+}
+
+    // ----- Most Affected Parameters -----
+    const paramCanvas = document.getElementById('parametersChart');
+    if (paramCanvas && data.mostAffectedParameters) {
+      new Chart(paramCanvas, {
+        type: 'bar',
+        data: {
+          labels: data.mostAffectedParameters.map(p =>
+            p.parameter || 'Unknown'
+          ),
+          datasets: [{
+            label: 'Issues',
+            data: data.mostAffectedParameters.map(p => p.count),
+            backgroundColor: '#5b90d2',
+            borderRadius: 6,
+            barThickness: 30
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1 }
+            }
+          }
+        }
+      });      
+    }
+
+    // ----- Tickets Opened vs Closed by Country -----
+const ocCanvas = document.getElementById('openedClosedByCountryChart');
+
+if (ocCanvas && data.openedClosedByCountry) {
+  const labels = data.openedClosedByCountry.map(x => x.country);
+  const opened = data.openedClosedByCountry.map(x => x.opened);
+  const closed = data.openedClosedByCountry.map(x => x.closed);
+
+  new Chart(ocCanvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Tickets Closed',
+          data: closed,
+          backgroundColor: '#4e79a7',
+          borderRadius: 4
+        },
+        {
+          label: 'Tickets Opened',
+          data: opened,
+          backgroundColor: '#f28e2b',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+}
+
+  }, 0);
+});
   },
 ]);
 
@@ -1215,7 +1707,7 @@ App.controller('leaflet', [
       ModalService.setModalInstance(feature);
     };
     $scope.$on('leaflet', function(event, leaflet) {
-      SiteService.GetSites('tahmo', 'geojson').then(function(response) {
+      SiteService.GetSites( 'geojson').then(function(response) { //took out 'tahmo', to fix the sites 
         const sites = response.data;
         if (sites.success) {
           angular.extend($scope, {
@@ -1434,6 +1926,25 @@ App.controller('ProfileCtrl', [
       count: 0,
       data: [],
     };
+
+    // =====================
+// ADMIN USER ACTION (ARCHIVE / DELETE)
+// =====================
+$scope.UserAction = function (userId, action) {
+  $http.post('/api/users/' + userId + '/action', {
+    action: action
+  }).then(function (response) {
+    if (response.data.success) {
+      alert(response.data.message);
+      window.location.reload();
+    } else {
+      alert(response.data.message);
+    }
+  }, function () {
+    alert('Server error while performing user action.');
+  });
+};
+
     UserService.GetUserById($scope.id).then(function(response) {
       const result = response.data;
       $scope.user = result.data;
@@ -1461,8 +1972,36 @@ App.controller('ProfileCtrl', [
           //e.preventDefault();
           //});
         });
-    });
-    /**
+      });
+
+// DELETE USER CLICK HANDLER
+jQuery(document).on('click', '.user-action', function () {
+  var userId = jQuery(this).data('id');
+  var action = jQuery(this).data('action');
+
+  if (action === 'delete') {
+    if (!confirm('Are you sure you want to DELETE this user permanently?')) {
+      return;
+    }
+  }
+
+  if (action === 'archive') {
+    if (!confirm('Are you sure you want to ARCHIVE this user?')) {
+      return;
+    }
+  }
+
+  var scope = angular.element(
+    document.querySelector('[ng-controller=ProfileCtrl]')
+  ).scope();
+
+  scope.$apply(function () {
+    scope.UserAction(userId, action);
+  });
+});
+                    
+ 
+ /**
      * ADD a station modal
      */
     $scope.showTabDialog = function(ev) {
@@ -1583,17 +2122,50 @@ App.controller('ProfileCtrl', [
         ajax: UserService.HttpUrlGetManagerUsers(user_id, user_role),
         destroy: true,
         columnDefs: [
+          // {
+          //   targets: -1,
+          //   render: function(data, type, row, meta) {
+          //     return (
+          //       '<a class="user-edit cursor-pointer">' +
+          //       '<md-tooltip md-direction="left">Add User</md-tooltip>' +
+          //       '<i class="fa fa-pencil"></i> ' +
+          //       '</a>'
+          //     );
+          //   },
+          // },
           {
             targets: -1,
-            render: function(data, type, row, meta) {
-              return (
-                '<a class="user-edit cursor-pointer">' +
-                '<md-tooltip md-direction="left">Add User</md-tooltip>' +
-                '<i class="fa fa-pencil"></i> ' +
-                '</a>'
-              );
-            },
+            className: 'text-center',
+            render: function (data, type, row, meta) {
+          
+              let editBtn =
+                '<span class="user-edit cursor-pointer" title="Edit User">' +
+                  '<i class="fa fa-pencil text-primary"></i>' +
+                '</span>';
+          
+              let archiveBtn =
+                '<span class="user-action cursor-pointer" ' +
+                'data-id="' + row._id + '" ' +
+                'data-action="archive" ' +
+                'title="Archive User">' +
+                  '<i class="fa fa-archive text-warning"></i>' +
+                '</span>';
+          
+              let deleteBtn =
+                '<span class="user-action cursor-pointer" ' +
+                'data-id="' + row._id + '" ' +
+                'data-action="delete" ' +
+                'title="Delete User">' +
+                  '<i class="fa fa-trash text-danger"></i>' +
+                '</span>';
+          
+              return editBtn + '&nbsp;&nbsp;' + archiveBtn + '&nbsp;&nbsp;' + deleteBtn;
+            }
           },
+          
+
+          
+          
           {
             targets: 0,
             render: function(data, type, row, meta) {

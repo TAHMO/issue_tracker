@@ -3,6 +3,10 @@ var mongoose = require('mongoose');
 var IssueSubscriptionSchema = new mongoose.Schema({
 	user_id: String,
 	issue_id: String,
+	muted: { type: Boolean, default: false }
 });
-var model = issue_tracker_conn.model('IssueSubscriptions', IssueSubscriptionSchema);
-module.exports = model;
+module.exports = issue_tracker_conn.model(
+	'IssueSubscription',
+	IssueSubscriptionSchema,
+	'issuesubscriptions'
+  );

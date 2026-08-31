@@ -160,6 +160,19 @@ md-input-container:not(.md-input-invalid).md-input-focused .md-input {
                                     ng-click="subscribeToIssue(openIssue._id, subscribedIssues)" 
                                     aria-label="Email Subscription">
                                   </md-checkbox>
+
+								  <!-- MUTE / UNMUTE ICON -->
+								  <md-button class="md-icon-button" 
+								  ng-click="toggleMute(openIssue._id)" 
+								  aria-label="Mute/Unmute">
+						   <i class="fa"
+							  ng-class="{
+								'fa-bell-slash text-warning': isMuted(openIssue._id),
+								'fa-bell text-muted': !isMuted(openIssue._id)
+							  }"
+							  style="font-size: 20px;">
+						   </i>
+					   </md-button>
                                   </div>
                                 </div>
 															</td>
