@@ -4,7 +4,7 @@
 }
 </style>
 <!-- Page Header -->
-<div class="content bg-image overflow-hidden" style="background-image: url('assets/img/photos/photo3@2x.jpg');">
+<div class="content bg-image overflow-hidden" ng-controller="DashboardCtrl" style="background-image: url('assets/img/photos/photo3@2x.jpg');">
     <div class="push-50-t push-15">
         <h1 class="h2 text-white animated zoomIn">Dashboard</h1>
 				<h2 class="h5 text-white-op animated zoomIn">Welcome {{user.first_name}}</h2>
@@ -51,6 +51,23 @@
 								</div>
 						</div>
 				</div>
+				<div class="col-xs-6 col-sm-4">
+					<div class="block block-rounded">
+					  <div class="block-content block-content-full text-center">
+						<div class="text-muted">
+						  <small><i class="fa fa-trophy"></i> Best Country</small>
+						</div>
+						<div class="font-s12 font-w700">Avg Station Uptime</div>
+						<div class="h2 font-w300 text-success">
+						  {{bestCountry.country}}
+						</div>
+						<div class="text-muted">
+						  {{bestCountry.avgUptime}} %
+						</div>
+					  </div>
+					</div>
+				  </div>
+				  
 		</div>
 		<!-- END Stats -->
 </div>
@@ -73,7 +90,7 @@
                 <div class="block-content block-content-full bg-gray-lighter text-center">
                     <!-- Leaflet.js Leaflet (is initialized in js/controllers.js -> 'DashboardCtrl' Controller), -->
 										<!-- for more examples you can check out http://angular-ui.github.io/ui-leaflet/examples/0000-viewer.html#/basic/first-example -->
-										<div ng-app="app" ng-controller="leaflet" leaflet></div>
+										<div ng-controller="leaflet" leaflet></div>
 										<!-- <leaflet width="100%" height="480px" defaults="defaults" geojson="geojson"></leaflet>-->
 								</div>
 						</div>
@@ -113,4 +130,77 @@
         </div>
     </div>
 </div>
+<!-- Ticket Analytics -->
+<div class="content">
+	<div class="row">
+	  <div class="col-md-6">
+		<div class="block">
+		  <div class="block-header">
+			<h3 class="block-title">Open Tickets</h3>
+		  </div>
+		  <div class="chart-container">
+			<canvas id="openTicketsChart"></canvas>
+		  </div>
+		</div>
+	  </div>
+  
+	  <div class="col-md-6">
+		<div class="block">
+		  <div class="block-header">
+			<h3 class="block-title">Avg Unresolved Duration (Days)</h3>
+		  </div>
+		  <div class="chart-container">
+			<canvas id="unresolvedChart"></canvas>
+		  </div>
+		</div>
+	  </div>
+  
+	</div>
+  </div>
+  <div class="row">
+
+	<!-- Hardware vs Battery -->
+	<div class="col-md-6">
+	  <div class="block">
+		<div class="block-header">
+		  <h3 class="block-title">Battery Issues</h3>
+		</div>
+		<div class="block-content">
+		  <div style="height:300px;">
+			<canvas id="batteryPieChart"></canvas>
+		  </div>
+		</div>
+	  </div>
+	</div>
+  
+	<!-- Most Affected Parameters -->
+	<div class="col-md-6">
+	  <div class="block">
+		<div class="block-header">
+		  <h3 class="block-title">Most Affected Parameters</h3>
+		</div>
+		<div class="block-content">
+		  <div style="height:300px;">
+			<canvas id="parametersChart"></canvas>
+		  </div>
+		</div>
+	  </div>
+	</div>
+  
+  </div>
+
+  <div class="row">
+  <div class="col-md-12">
+    <div class="block">
+      <div class="block-header">
+        <h3 class="block-title">Tickets Closed vs Tickets Opened by Country</h3>
+      </div>
+      <div class="chart-container" style="height:420px;">
+        <canvas id="openedClosedByCountryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+  
+  
 <!-- END Page Content -->

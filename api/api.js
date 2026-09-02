@@ -7,15 +7,17 @@ const SiteCtrl = require('./controllers/Site');
 const TestCtrl = require('./controllers/Test');
 const UploadCtrl = require('./controllers/Upload');
 const UserCtrl = require('./controllers/User');
+const AnalyticsCtrl = require('./controllers/Analytics'); //New
 
 module.exports = function(router) {
 	AuthCtrl(router);
 	CommentCtrl(router);
-  FaultInboxCtrl(router); // New
+  	FaultInboxCtrl(router); // New
 	EmailCtrl(router);
 	IssueCtrl(router);
 	SiteCtrl(router);
 	TestCtrl(router);
 	UploadCtrl(router);
 	UserCtrl(router);
+	AnalyticsCtrl(router); // New
 };

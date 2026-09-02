@@ -115,6 +115,19 @@ md-input-container .md-input::-moz-placeholder {
 								<p style="line-height: 35px;">
 								{{issue.description}}
 								</p>
+                <!-- SUBSCRIBERS SECTION -->
+                 <div class="col-xs-12" style="margin-top: 20px;">
+                  <h4><strong>Subscribers</strong></h4>
+                  <div ng-if="subscribers.length === 0">
+                    <em>No subscribers.</em>
+                  </div>
+                  <ul ng-if="subscribers.length > 0">
+                    <li ng-repeat="s in subscribers">
+                      {{s.full_name}} ({{s.email}})
+                    </li>
+                  </ul>
+                  <md-divider></md-divider>
+                 </div>
 							</div>
 						</md-card-content>
 					</md-card>
